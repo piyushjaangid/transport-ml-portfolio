@@ -1,9 +1,9 @@
 """
 Streamlit Portfolio Dashboard — Piyush Jaangid
 ================================================
-Unified showcase of the 3 ML case studies.
+Three end-to-end ML case studies in transport / mobility.
 Run locally:    streamlit run app.py
-Deploy free:    https://share.streamlit.io  (link your GitHub repo)
+Deploy free:    https://share.streamlit.io
 """
 import streamlit as st
 import pandas as pd
@@ -18,7 +18,72 @@ st.set_page_config(
     page_title="Piyush Jaangid — ML Portfolio",
     page_icon="🚦",
     layout="wide",
+    initial_sidebar_state="expanded",
 )
+
+# ----------------------------------------------------------------------------
+# CSS — make the selection buttons big, tappable, and visually distinct
+# ----------------------------------------------------------------------------
+st.markdown("""
+<style>
+.block-container { padding-top: 2rem; padding-bottom: 3rem; max-width: 1200px; }
+
+div[data-testid="stButton"] > button {
+    width: 100%;
+    min-height: 180px;
+    border: 2px solid #1F3864;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #ffffff 0%, #f0f4fb 100%);
+    color: #1F3864;
+    font-size: 1.05rem;
+    font-weight: 600;
+    padding: 1.2rem 1rem;
+    text-align: left;
+    transition: all 0.18s ease;
+    line-height: 1.5;
+    white-space: normal;
+}
+div[data-testid="stButton"] > button:hover {
+    background: linear-gradient(135deg, #1F3864 0%, #2E75B6 100%);
+    color: white;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 18px rgba(31, 56, 100, 0.25);
+    border-color: #1F3864;
+}
+div[data-testid="stButton"] > button:focus:not(:active) {
+    border-color: #1F3864;
+    box-shadow: 0 0 0 3px rgba(31, 56, 100, 0.2);
+}
+
+.hero-title {
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: #1F3864;
+    margin-bottom: 0.3rem;
+    line-height: 1.15;
+}
+.hero-subtitle {
+    font-size: 1.1rem;
+    color: #555;
+    margin-bottom: 0.8rem;
+}
+.hero-tagline {
+    font-size: 0.95rem;
+    color: #2E75B6;
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+}
+.section-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #1F3864;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 1.5rem;
+    margin-bottom: 0.6rem;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # ----------------------------------------------------------------------------
 # DATA LOADING
@@ -43,77 +108,128 @@ def load_case3():
     return pd.read_csv(DATA / "case3_taz.csv")
 
 # ----------------------------------------------------------------------------
-# SIDEBAR / NAVIGATION
+# ROUTING via session state
 # ----------------------------------------------------------------------------
-st.sidebar.title("Piyush Jaangid")
-st.sidebar.markdown(
-    "**ML Portfolio — Transport & Mobility**\n\n"
-    "Three end-to-end machine learning case studies grounded in real transport-sector "
-    "problems. Each notebook follows the full 13-step ML pipeline."
-)
-st.sidebar.markdown("---")
-st.sidebar.markdown("### Links")
-st.sidebar.markdown("- [GitHub](https://github.com/piyushjaangid)")
-st.sidebar.markdown("- [Kaggle](https://www.kaggle.com/piyushjaangid)")
-st.sidebar.markdown("- [LinkedIn](https://www.linkedin.com/in/piyush-jaangid-089079190/)")
-st.sidebar.markdown("- [Blog](https://piyushjaangid.blogspot.com)")
-st.sidebar.markdown("---")
+PAGES = {
+    "home": "🏠  Home",
+    "case1": "🚕  1. Regression — Trip Duration",
+    "case2": "🚌  2. Classification — E-Bus TCO",
+    "case3": "🗺️  3. Unsupervised — TAZ Clustering",
+}
 
-page = st.sidebar.radio(
-    "Pick a case study:",
-    ["Overview",
-     "1. Regression — Trip Duration",
-     "2. Classification — E-Bus TCO",
-     "3. Unsupervised — TAZ Clustering"],
-)
+if "page" not in st.session_state:
+    st.session_state.page = "home"
 
-# ============================================================================
-# OVERVIEW PAGE
-# ============================================================================
-if page == "Overview":
-    st.title("🚦 Transport-Sector ML Portfolio")
+def go(page_key: str):
+    st.session_state.page = page_key
+
+# ----------------------------------------------------------------------------
+# SIDEBAR — backup navigation, plus author info
+# ----------------------------------------------------------------------------
+with st.sidebar:
+    st.markdown("### Piyush Jaangid")
     st.markdown(
-        "Hi — I'm a transport engineer (M.Sc. Edinburgh Napier, B.Tech IPU) who builds "
-        "machine-learning models for mobility problems. This dashboard summarises three "
-        "end-to-end case studies you can also explore as Jupyter notebooks on my GitHub."
+        "**ML Portfolio — Transport & Mobility**\n\n"
+        "Three end-to-end machine-learning case studies on real transport-sector problems."
     )
 
-    cols = st.columns(3)
-    cards = [
-        ("🚕 Regression",
-         "Predict ride-hail trip duration from booking-time features. Compares 7 algorithms "
-         "(Linear → XGBoost) on the NYC TLC dataset structure.",
-         "MAE: ~13 s   |   R²: 0.96"),
-        ("🚌 Classification",
-         "Predict whether an e-bus will beat diesel on TCO over a 12-yr GCC contract. "
-         "Built on the WRI India and ICCT TCO methodology.",
-         "F1: ~0.82   |   ROC-AUC: ~0.78"),
-        ("🗺️ Unsupervised",
-         "Cluster Traffic Analysis Zones for the 4-stage transport model. Compares K-Means, "
-         "Hierarchical, DBSCAN, and GMM with PCA visualisation.",
-         "Silhouette > 0.50"),
-    ]
-    for col, (title, body, metric) in zip(cols, cards):
-        with col:
-            st.markdown(f"### {title}")
-            st.write(body)
-            st.success(metric)
+    st.markdown("---")
+    st.markdown("**Navigate**")
+    for key, label in PAGES.items():
+        if st.button(label, key=f"sb_{key}", use_container_width=True):
+            go(key)
+            st.rerun()
 
     st.markdown("---")
     st.markdown(
-        "**Methodology common to all three notebooks:**\n\n"
-        "Step 0 Problem definition  →  Step 1 Type selection  →  Step 2 Data collection  "
-        "→  Step 3 EDA (with correlation analysis and feature pruning)  →  Step 4-5 "
-        "Cleaning, preprocessing, feature engineering  →  Step 6-7 Model training "
-        "(7+ algorithms each)  →  Step 8 Evaluation  →  Step 9 Cross-validation  "
-        "→  Step 10 Hyperparameter tuning  →  Step 11 Final test  →  Step 12-13 "
-        "Deployment & monitoring notes."
+        """**Links**
+- [GitHub](https://github.com/piyushjaangid)
+- [Kaggle](https://www.kaggle.com/piyushjaangid)
+- [LinkedIn](https://www.linkedin.com/in/piyush-jaangid-089079190/)
+- [Blog](https://piyushjaangid.blogspot.com)
+        """
+    )
+
+page = st.session_state.page
+
+# ============================================================================
+# HOME PAGE — landing with prominent picker
+# ============================================================================
+if page == "home":
+    st.markdown('<div class="hero-title">🚦 Transport-Sector ML Portfolio</div>',
+                unsafe_allow_html=True)
+    st.markdown('<div class="hero-subtitle">Piyush Jaangid &nbsp;·&nbsp; '
+                'M.Sc. Transport Planning &nbsp;·&nbsp; B.Tech Civil</div>',
+                unsafe_allow_html=True)
+    st.markdown('<div class="hero-tagline">Three end-to-end ML case studies. '
+                'Each follows the full 13-step pipeline. Pick one to begin →</div>',
+                unsafe_allow_html=True)
+
+    st.markdown('<div class="section-label">Pick a case study</div>',
+                unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns(3, gap="medium")
+
+    with col1:
+        if st.button(
+            "🚕  CASE 1\n\n"
+            "Regression\n\n"
+            "Predict ride-hail trip duration from booking-time features. "
+            "Compares 7 algorithms — Linear → XGBoost.\n\n"
+            "▸ MAE: ~13 s   |   R²: 0.96",
+            key="card1",
+            use_container_width=True,
+        ):
+            go("case1"); st.rerun()
+
+    with col2:
+        if st.button(
+            "🚌  CASE 2\n\n"
+            "Classification\n\n"
+            "Predict whether an e-bus beats diesel on TCO over a 12-yr "
+            "GCC contract. WRI / ICCT methodology.\n\n"
+            "▸ F1: ~0.82   |   ROC-AUC: ~0.78",
+            key="card2",
+            use_container_width=True,
+        ):
+            go("case2"); st.rerun()
+
+    with col3:
+        if st.button(
+            "🗺️  CASE 3\n\n"
+            "Unsupervised\n\n"
+            "Cluster Traffic Analysis Zones for the 4-stage transport model. "
+            "K-Means, Hierarchical, DBSCAN, GMM.\n\n"
+            "▸ Silhouette: > 0.30",
+            key="card3",
+            use_container_width=True,
+        ):
+            go("case3"); st.rerun()
+
+    st.markdown("&nbsp;")
+    st.markdown(
+        "**Common methodology across all three:** "
+        "Step 0 Problem definition → Step 1 Type selection → Step 2 Data → "
+        "Step 3 EDA (correlation, multicollinearity pruning) → Steps 4–5 "
+        "Cleaning, preprocessing, feature engineering → Steps 6–7 Train multiple "
+        "algorithms → Step 8 Evaluate → Step 9 Cross-validate → Step 10 Tune → "
+        "Step 11 Final test → Steps 12–13 Deploy & monitor."
+    )
+
+    st.markdown("&nbsp;")
+    st.info(
+        "💡 **For recruiters:** the case studies above are interactive — train "
+        "models live, adjust sensitivity sliders, switch clustering algorithms. "
+        "Source code and Jupyter notebooks are on "
+        "[GitHub](https://github.com/piyushjaangid/transport-ml-portfolio)."
     )
 
 # ============================================================================
 # CASE 1 — REGRESSION
 # ============================================================================
-elif page.startswith("1."):
+elif page == "case1":
+    if st.button("← Back to home", key="back1"):
+        go("home"); st.rerun()
     st.title("Case 1 — Predicting Ride-Hail Trip Duration")
     st.caption("Regression  |  Inspired by Uber Movement & NYC TLC data")
 
@@ -174,7 +290,9 @@ elif page.startswith("1."):
 # ============================================================================
 # CASE 2 — CLASSIFICATION
 # ============================================================================
-elif page.startswith("2."):
+elif page == "case2":
+    if st.button("← Back to home", key="back2"):
+        go("home"); st.rerun()
     st.title("Case 2 — E-Bus TCO Parity Classifier")
     st.caption("Classification  |  Sources: WRI India 2021, ICCT 2024-2025")
 
@@ -195,7 +313,6 @@ elif page.startswith("2."):
         DAYS = 330; LIFE = 12; r = disc / 100
         SUB_PER_KWH = 20000; SUB_CAP = 50e5
 
-        # rebuild ops with the user-chosen growth rates
         ops_local = ops.copy()
         ops_local["diesel_price_inr_per_l"] = [95 * (1 + d_growth / 100) ** i
                                                 for i in range(len(ops_local))]
@@ -252,7 +369,9 @@ elif page.startswith("2."):
 # ============================================================================
 # CASE 3 — UNSUPERVISED
 # ============================================================================
-elif page.startswith("3."):
+elif page == "case3":
+    if st.button("← Back to home", key="back3"):
+        go("home"); st.rerun()
     st.title("Case 3 — TAZ Clustering for the 4-Stage Transport Model")
     st.caption("Unsupervised  |  CMP / WRI India / ITDP context")
 
